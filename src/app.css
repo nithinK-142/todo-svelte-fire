@@ -8,3 +8,17 @@ body{
   font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
   font-size: 24px;
 }
+
+/* Browser's scroll bar modifications */
+::-webkit-scrollbar {
+  width: 12px; 
+  background-color: #202324 !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: white;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #90A4AE;
+} 
