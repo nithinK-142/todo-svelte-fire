@@ -216,6 +216,9 @@
     margin-bottom: 4px;
   }
 
+  .status-container {
+    user-select: none;
+  }
   .complete {
     color: rgba(0, 0, 0, 0.424);
     text-decoration: line-through;
