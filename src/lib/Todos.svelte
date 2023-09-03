@@ -97,8 +97,8 @@
     </div>
 
     <div class="todo-container">
-      {#each fbTodos as item}
-        <div class="todo-list">
+      {#each fbTodos as item (item.id)}
+        <div class="todo-list" animate:flip={{ duration: 50 }}>
           <div class="flex">
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
