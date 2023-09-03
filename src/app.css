@@ -1,6 +1,10 @@
 * {
-  margin: 0px;
+  padding: 0;
+  box-sizing: border-box;
 }
+
 body{
-  background-color: #5F746F;
+  background-color: #ba97a95e;
+  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace;
+  font-size: 24px;
 }

@@ -1,6 +1,7 @@
 <script>
   import "../app.css";
-   import trash from "../assets/trash.webp"
+  import trash from "../assets/trash.svg";
+  import { flip } from "svelte/animate";
   import { db } from "./fireConfig";
   import {
     collection,
@@ -14,13 +15,12 @@
   } from "firebase/firestore";
 
   let task = "";
-  let error = "";
   let fbTodos = [];
 
   const handleSnapshot = (querySnapshot) => {
     fbTodos.length = 0;
     querySnapshot.forEach(
-      (/** @type {{ data: () => any; id: any; }} */ doc) => {
+      (doc) => {
         const todo = {
           ...doc.data(),
           id: doc.id,
@@ -28,12 +28,14 @@
         fbTodos.push(todo);
       }
     );
-    console.table(fbTodos);
   };
 
   const firestoreInit = () => {
-    const todoRef = query(collection(db, "todos"), orderBy("createdAt", "desc"));
-  
+    const todoRef = query(
+      collection(db, "todos"),
+      orderBy("createdAt", "desc")
+    );
+
     return onSnapshot(todoRef, handleSnapshot, handleError);
   };
 
@@ -41,10 +43,9 @@
     console.error("Firebase error:", err);
   };
 
-  const unsubscribe = firestoreInit();
+  firestoreInit();
 
   const addTodo = async () => {
-
     const currentDate = new Date();
     const formattedDateAndTime = `${currentDate.toDateString()} ${currentDate.toLocaleTimeString()}`;
 
@@ -52,110 +53,197 @@
       const addRef = await addDoc(collection(db, "todos"), {
         task: task,
         isComplete: false,
-        createdAt: formattedDateAndTime
+        createdAt: formattedDateAndTime,
       });
-      error = "";
-    } else error = "Input field is empty";
+    }
     task = "";
   };
 
-  const keyPressed = (/** @type {{ keyCode: number; }} */ event) => {
+  const keyPressed = (event) => {
     if (event.keyCode === 13) addTodo();
   };
 
-  const markComplete = async (item) => {
-    await updateDoc(doc(db, "todos", item.id), {
-      isComplete: !item.isComplete,
+  const markComplete = async (id, completionStatus) => {
+    await updateDoc(doc(db, "todos", id), {
+      isComplete: !completionStatus,
     });
   };
 
   const markIncomplete = async (id) => {
     await deleteDoc(doc(db, "todos", id));
-};
+  };
 
+  const formatAndSliceTask = (task) => {
+    const firstSlice = `${task.slice(0, 25)}`;
+    let secondSlice = task.slice(25);
+
+    if (secondSlice.length > 25) {
+      secondSlice = formatAndSliceTask(secondSlice);
+    }
+
+    return `${firstSlice} ${secondSlice}`;
+  };
 </script>
 
 <svelte:window on:keydown={keyPressed} />
 
 <div class="container">
-  <div class="input-container">
-    <input type="text" placeholder="Add a Task" bind:value={task} />
-    <button class="addBtn" on:click={addTodo}>Add</button>
-  </div>
+  <div class="main-container">
+    <h1>Todos 📓</h1>
 
-  <ul>
-    <div class="task-container">
+    <div class="input-container flex">
+      <input type="text" placeholder="Add a Task" bind:value={task} />
+      <button class="addBtn btn" on:click={addTodo}>+</button>
+    </div>
+
+    <div class="todo-container">
       {#each fbTodos as item}
-        <li class:complete={item.isComplete}>
-          <span class="list">
-            {item.task}
-          </span>
-          <span>
-            <button class="markBtn" on:click={() => markComplete(item)}
-              >&#10003;</button
+        <div class="todo-list">
+          <div class="flex">
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="status-container btn"
+              on:click={() => markComplete(item.id, item.isComplete)}
+              title={item.isComplete
+                ? "Mark as incomplete"
+                : "Mark as complete"}
             >
-            <!-- <button class="trashBtn" on:click={() => markIncomplete(item.id)}
-              >&#128465;</button
-            > -->
-            <button class="trashBtn" on:click={() => markIncomplete(item.id)}
-              ><img class="trashIcon" src={trash} alt=""></button
+              {item.isComplete ? "🔳" : "✅"}
+            </div>
+            <div class="tasks" class:complete={item.isComplete}>
+              {#if item.task.length < 25}
+                {item.task}
+              {:else}
+                {formatAndSliceTask(item.task)}
+              {/if}
+            </div>
+          </div>
+          <div class="delete-container">
+            <button
+              class="trashBtn btn"
+              on:click={() => markIncomplete(item.id)}
+              title="Delete this task."
             >
-          </span>
-        </li>
+              <img class="trashIcon" src={trash} alt="trashIcon" />
+            </button>
+          </div>
+        </div>
       {:else}
         <p>No Tasks todo</p>
       {/each}
     </div>
-  </ul>
-  <p class="error">{error}</p>
+  </div>
 </div>
 
 <style>
   .container {
-    margin-top: 80px;
     display: grid;
     place-items: center;
+    height: 100%;
+    width: 100%;
+    gap: 2.5rem;
   }
 
-  .task-container {
-    display: inline;
+  .main-container {
+    width: 50%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
+  h1 {
+    font-size: 3.125rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .flex {
+    display: flex;
+  }
+  
+  .input-container {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+  }
+  
   input {
-    padding: 0.5em;
-    width: 200px;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0.4em 1em;
+    border-radius: 2px;
+    border: 1px solid #ccc;
+    box-shadow: 0 0 2px #ddd;
   }
 
-  .addBtn {
-    padding: 0.5em;
-  }
-
-  li,
-  p {
-    color: white;
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 2rem;
+  input:focus {
+    outline: 1px solid #444;
   }
 
   .btn {
-
-  }
-  .markBtn {
-    padding: 0.5rem;
-  }
-  
-  .trashBtn {
-    padding: none;
-    background: none;
+    margin: 0;
+    padding: 0;
     border: none;
+    border-radius: 0;
+    background: none;
     cursor: pointer;
   }
-  .trashIcon {
-    height: 30px;
+  
+  .addBtn {
+    background: #77b255;
+    color: white;
+    font-weight: bold;
+    padding: 10px 15px;
+    font-size: inherit;
   }
-  .complete > .list {
-    color: rgba(255, 255, 255, 0.802);
+
+  .addBtn:active {
+    opacity: 0.7;
+  }
+
+  .todo-container {
+    width: 25rem;
+  }
+
+  .todo-list {
+    width: 100%;
+    background-color: #f2f0ee;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 4px;
+    padding-right: 10px;
+    margin-bottom: 4px;
+  }
+
+  .complete {
+    color: rgba(0, 0, 0, 0.424);
     text-decoration: line-through;
     text-decoration-color: rgb(49, 48, 48);
+  }
+
+  .tasks {
+    padding-top: 4px;
+    padding-left: 10px;
+  }
+
+  .trashIcon {
+    margin-top: 4px;
+    height: 26px;
+  }
+
+  .trashIcon:hover {
+    transition: transform 0.2s linear;
+    transform: scale(1.1);
+  }
+
+  p {
+    text-align: center;
+  }
+
+  @media screen and (max-width: 460px) {
+    h1 {
+      font-size: 2.25rem;
+    }
   }
 </style>
