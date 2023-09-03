@@ -74,10 +74,10 @@
   };
 
   const formatAndSliceTask = (task) => {
-    const firstSlice = `${task.slice(0, 25)}`;
-    let secondSlice = task.slice(25);
+    const firstSlice = `${task.slice(0, 24)}`;
+    let secondSlice = task.slice(24);
 
-    if (secondSlice.length > 25) {
+    if (secondSlice.length > 24) {
       secondSlice = formatAndSliceTask(secondSlice);
     }
 
